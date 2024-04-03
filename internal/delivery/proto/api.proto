@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package go_chat.go_chat;
+
+option go_package="./protocol_buffer";
+
+service Services {
+  rpc ShowName(ShowNameRequest) returns (ShowNameResponse) {}
+  rpc StreamServer(StreamServerRequest) returns (stream StreamServerResponse){}
+  rpc SendMessageToChannel(stream Message) returns (stream Message) {}
+}
+message ShowNameRequest{}
+message ShowNameResponse {
+  string name = 1;
+}
+
+message StreamServerRequest{
+  int32 id = 1;
+}
+message StreamServerResponse{
+  string msg = 1;
+}
+
+message Channel {
+  string name = 1;
+  string senders_name = 2;
+}
+
+message Message {
+  Channel channel = 1;
+  string message = 2;
+}
