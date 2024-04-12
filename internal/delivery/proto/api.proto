@@ -6,8 +6,16 @@ option go_package="./protocol_buffer";
 
 service Services {
   rpc ShowName(ShowNameRequest) returns (ShowNameResponse) {}
+  rpc Test(Request) returns (Response) {}
   rpc StreamServer(StreamServerRequest) returns (stream StreamServerResponse){}
   rpc SendMessageToChannel(stream Message) returns (stream Message) {}
+}
+
+message Request {
+  string data = 1;
+}
+message Response {
+  string result = 1;
 }
 message ShowNameRequest{}
 message ShowNameResponse {
