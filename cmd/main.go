@@ -12,6 +12,7 @@ import (
 	"go_chat/internal/usecase"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/status"
 	"log"
 	"net"
@@ -31,12 +32,18 @@ func main() {
 
 	Message := make(chan *protocolBuffer.Message)
 	defer close(Message)
-	s := grpc.NewServer(grpc.ChainUnaryInterceptor(
-		selector.UnaryServerInterceptor(
-			auth.UnaryServerInterceptor(authenticator),
-			selector.MatchFunc(authMatcher),
+	s := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			selector.UnaryServerInterceptor(
+				auth.UnaryServerInterceptor(authenticator),
+				selector.MatchFunc(authMatcher),
+			),
+			selector.UnaryServerInterceptor(
+				auth.UnaryServerInterceptor(authenticatortwo),
+				selector.MatchFunc(authMatcher),
+			),
 		),
-	))
+	)
 
 	repo := repository.NewRepository()
 	uc := usecase.NewUsecase(repo)
@@ -48,6 +55,19 @@ func main() {
 		log.Fatalf("failed to serve: %v", err)
 	}
 	fmt.Println("bbbbbb")
+}
+
+func authenticatortwo(ctx context.Context) (context.Context, error) {
+	token, err := auth.AuthFromMD(ctx, "bearer")
+	if err != nil {
+		return nil, err
+	}
+	// TODO: This is example only, perform proper Oauth/OIDC verification!
+	if token != "yolo" {
+		return nil, status.Error(codes.Unauthenticated, "invalid auth token")
+	}
+	// NOTE: You can also pass the token in the context for further interceptors or gRPC service code.
+	return ctx, nil
 }
 
 func authenticator(ctx context.Context) (context.Context, error) {
@@ -65,6 +85,9 @@ func authenticator(ctx context.Context) (context.Context, error) {
 
 func authMatcher(ctx context.Context, callMeta interceptors.CallMeta) bool {
 	fmt.Println(callMeta)
-	return true
+	fmt.Println(healthpb.Health_ServiceDesc.ServiceName)
+	fmt.Println(callMeta.Service)
+	//return true
 	//return healthpb.Health_ServiceDesc.ServiceName != callMeta.Service
+	return callMeta.Service == "ShowName"
 }
