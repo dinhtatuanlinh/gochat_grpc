@@ -3,19 +3,35 @@ syntax = "proto3";
 package go_chat.go_chat;
 
 option go_package="./protocol_buffer";
-
+import "google/protobuf/timestamp.proto";
 service Services {
+  rpc Register(User) returns (RegisterResponse) {}
   rpc ShowName(ShowNameRequest) returns (ShowNameResponse) {}
-  rpc Test(Request) returns (Response) {}
+  rpc Test(Request) returns (TestResponse) {}
   rpc StreamServer(StreamServerRequest) returns (stream StreamServerResponse){}
   rpc SendMessageToChannel(stream Message) returns (stream Message) {}
 }
 
+message User {
+  string username = 1;
+  string password = 2;
+  string email = 3;
+  optional google.protobuf.Timestamp birthday = 4;
+}
+message RegisterResponse {
+  Status status = 1;
+}
 message Request {
   string data = 1;
 }
-message Response {
-  string result = 1;
+message TestResponse {
+  Status status = 1;
+  string result = 2;
+}
+message Status {
+  string Status = 1;
+  string ErrorCode = 2;
+  string ErrorMessage = 3;
 }
 message ShowNameRequest{}
 message ShowNameResponse {

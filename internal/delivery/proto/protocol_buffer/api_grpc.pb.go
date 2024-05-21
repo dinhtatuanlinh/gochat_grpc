@@ -22,8 +22,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ServicesClient interface {
+	Register(ctx context.Context, in *User, opts ...grpc.CallOption) (*RegisterResponse, error)
 	ShowName(ctx context.Context, in *ShowNameRequest, opts ...grpc.CallOption) (*ShowNameResponse, error)
-	Test(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
+	Test(ctx context.Context, in *Request, opts ...grpc.CallOption) (*TestResponse, error)
 	StreamServer(ctx context.Context, in *StreamServerRequest, opts ...grpc.CallOption) (Services_StreamServerClient, error)
 	SendMessageToChannel(ctx context.Context, opts ...grpc.CallOption) (Services_SendMessageToChannelClient, error)
 }
@@ -36,6 +37,15 @@ func NewServicesClient(cc grpc.ClientConnInterface) ServicesClient {
 	return &servicesClient{cc}
 }
 
+func (c *servicesClient) Register(ctx context.Context, in *User, opts ...grpc.CallOption) (*RegisterResponse, error) {
+	out := new(RegisterResponse)
+	err := c.cc.Invoke(ctx, "/go_chat.go_chat.Services/Register", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *servicesClient) ShowName(ctx context.Context, in *ShowNameRequest, opts ...grpc.CallOption) (*ShowNameResponse, error) {
 	out := new(ShowNameResponse)
 	err := c.cc.Invoke(ctx, "/go_chat.go_chat.Services/ShowName", in, out, opts...)
@@ -45,8 +55,8 @@ func (c *servicesClient) ShowName(ctx context.Context, in *ShowNameRequest, opts
 	return out, nil
 }
 
-func (c *servicesClient) Test(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
-	out := new(Response)
+func (c *servicesClient) Test(ctx context.Context, in *Request, opts ...grpc.CallOption) (*TestResponse, error) {
+	out := new(TestResponse)
 	err := c.cc.Invoke(ctx, "/go_chat.go_chat.Services/Test", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -121,8 +131,9 @@ func (x *servicesSendMessageToChannelClient) Recv() (*Message, error) {
 // All implementations must embed UnimplementedServicesServer
 // for forward compatibility
 type ServicesServer interface {
+	Register(context.Context, *User) (*RegisterResponse, error)
 	ShowName(context.Context, *ShowNameRequest) (*ShowNameResponse, error)
-	Test(context.Context, *Request) (*Response, error)
+	Test(context.Context, *Request) (*TestResponse, error)
 	StreamServer(*StreamServerRequest, Services_StreamServerServer) error
 	SendMessageToChannel(Services_SendMessageToChannelServer) error
 	mustEmbedUnimplementedServicesServer()
@@ -132,10 +143,13 @@ type ServicesServer interface {
 type UnimplementedServicesServer struct {
 }
 
+func (UnimplementedServicesServer) Register(context.Context, *User) (*RegisterResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
+}
 func (UnimplementedServicesServer) ShowName(context.Context, *ShowNameRequest) (*ShowNameResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ShowName not implemented")
 }
-func (UnimplementedServicesServer) Test(context.Context, *Request) (*Response, error) {
+func (UnimplementedServicesServer) Test(context.Context, *Request) (*TestResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Test not implemented")
 }
 func (UnimplementedServicesServer) StreamServer(*StreamServerRequest, Services_StreamServerServer) error {
@@ -155,6 +169,24 @@ type UnsafeServicesServer interface {
 
 func RegisterServicesServer(s grpc.ServiceRegistrar, srv ServicesServer) {
 	s.RegisterService(&Services_ServiceDesc, srv)
+}
+
+func _Services_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(User)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ServicesServer).Register(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/go_chat.go_chat.Services/Register",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ServicesServer).Register(ctx, req.(*User))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Services_ShowName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -247,6 +279,10 @@ var Services_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "go_chat.go_chat.Services",
 	HandlerType: (*ServicesServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Register",
+			Handler:    _Services_Register_Handler,
+		},
 		{
 			MethodName: "ShowName",
 			Handler:    _Services_ShowName_Handler,

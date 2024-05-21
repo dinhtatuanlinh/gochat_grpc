@@ -12,7 +12,6 @@ import (
 	"go_chat/internal/usecase"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/status"
 	"log"
 	"net"
@@ -38,10 +37,10 @@ func main() {
 				auth.UnaryServerInterceptor(authenticator),
 				selector.MatchFunc(authMatcher),
 			),
-			selector.UnaryServerInterceptor(
-				auth.UnaryServerInterceptor(authenticatortwo),
-				selector.MatchFunc(authMatcher),
-			),
+			//selector.UnaryServerInterceptor(
+			//	auth.UnaryServerInterceptor(authenticatortwo),
+			//	selector.MatchFunc(authMatcher),
+			//),
 		),
 	)
 
@@ -54,7 +53,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
-	fmt.Println("bbbbbb")
+	fmt.Println("aaaa")
 }
 
 func authenticatortwo(ctx context.Context) (context.Context, error) {
@@ -84,10 +83,10 @@ func authenticator(ctx context.Context) (context.Context, error) {
 }
 
 func authMatcher(ctx context.Context, callMeta interceptors.CallMeta) bool {
-	fmt.Println(callMeta)
-	fmt.Println(healthpb.Health_ServiceDesc.ServiceName)
-	fmt.Println(callMeta.Service)
-	//return true
-	//return healthpb.Health_ServiceDesc.ServiceName != callMeta.Service
-	return callMeta.Service == "ShowName"
+	var authMatcherMap map[string]struct{}
+	authMatcherMap["Register"] = struct{}{}
+	authMatcherMap["Login"] = struct{}{}
+	_, ok := authMatcherMap[callMeta.Method]
+	return !ok
+	//return callMeta.Method != "ShowName"
 }
